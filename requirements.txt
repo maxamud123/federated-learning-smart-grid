@@ -1,0 +1,40 @@
+# Core FL Framework
+flwr==1.6.0
+flwr-datasets==0.0.2
+
+# Deep Learning
+torch==2.0.1
+torchvision==0.15.2
+
+# Data Processing
+numpy==1.24.3
+pandas==2.0.2
+scikit-learn==1.3.0
+
+# Visualization
+matplotlib==3.7.1
+seaborn==0.12.2
+plotly==5.14.1
+
+# Monitoring
+tensorboard==2.13.0
+tqdm==4.65.0
+
+# Configuration
+pyyaml==6.0
+python-dotenv==1.0.0
+
+# Utilities
+psutil==5.9.5  # Resource monitoring
+requests==2.31.0
+
+# Testing
+pytest==7.4.0
+pytest-cov==4.1.0
+
+# Jupyter (for notebooks)
+jupyter==1.0.0
+ipykernel==6.23.1
+
+# Optional: For Raspberry Pi GPIO
+# RPi.GPIO==0.7.1  # Uncomment if using sensors
