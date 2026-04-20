@@ -61,7 +61,7 @@ All devices connect through **home WiFi or a phone hotspot**. No dedicated route
 
 > See [DEVICE_SETUP.md](DEVICE_SETUP.md) for step-by-step hardware configuration.
 
-**Estimated cost: USD 40–80** (Pi 4 + Pi Zero + ESP32 + MicroSDs + power supplies)
+
 
 ---
 
