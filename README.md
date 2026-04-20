@@ -30,6 +30,7 @@ federated-learning-smart-grid/
 ├── experiments/
 │   ├── results/          ← JSON result files
 │   └── logs/             ← Per-round training logs
+├── DEVICE_SETUP.md       ← Hardware setup guide (Pi 4, Pi Zero, ESP32)
 ├── main.py               ← Entry point for all modes
 ├── requirements.txt
 └── README.md
@@ -39,11 +40,28 @@ federated-learning-smart-grid/
 
 ## Three Optimizations
 
-| Optimization | Technique | Target Reduction |
-|---|---|---|
-| Memory | INT8 Quantization | ~50% RAM reduction |
-| Communication | Top-K Compression (k=0.1) | ~60% bandwidth saving |
-| Training Time | Adaptive Local Epochs | ~40% time reduction |
+| Optimization  | Technique                   | Target Reduction      |
+| ------------- | --------------------------- | --------------------- |
+| Memory        | INT8 Quantization           | ~50% RAM reduction    |
+| Communication | Top-K Compression (k=0.1)  | ~60% bandwidth saving |
+| Training Time | Adaptive Local Epochs       | ~40% time reduction   |
+
+---
+
+## Physical Setup (No Router Needed)
+
+All devices connect through **home WiFi or a phone hotspot**. No dedicated router required.
+
+| Device | Role | IP | RAM | Local Epochs |
+|---|---|---|---|---|
+| Laptop | FL Server | 192.168.1.10 | — | — |
+| Raspberry Pi 4 | Client 1 | 192.168.1.11 | 2GB | 5 |
+| Raspberry Pi Zero | Client 2 | 192.168.1.12 | 512MB | 2 |
+| ESP32 | Client 3 | 192.168.1.13 | 520KB | 1 |
+
+> See [DEVICE_SETUP.md](DEVICE_SETUP.md) for step-by-step hardware configuration.
+
+**Estimated cost: USD 40–80** (Pi 4 + Pi Zero + ESP32 + MicroSDs + power supplies)
 
 ---
 
@@ -68,34 +86,64 @@ python main.py --mode preprocess --data data/raw/household_power_consumption.txt
 python main.py --mode test
 ```
 
-### Step 5: Run FL experiment (open 4 terminals)
+### Step 5: Run FL experiment
 
-**Terminal 1 - Server:**
+#### Option A — Single machine (simulation, localhost)
+
+Open 4 terminals:
+
 ```bash
+# Terminal 1 – Server
 python main.py --mode server --experiment baseline --num_rounds 50
-```
 
-**Terminal 2 - Client 1 (Pi 4):**
-```bash
+# Terminal 2 – Client 1
 python main.py --mode client --client_id 1 --device pi4 --compress
-```
 
-**Terminal 3 - Client 2 (Pi Zero):**
-```bash
+# Terminal 3 – Client 2
 python main.py --mode client --client_id 2 --device pi_zero --compress
-```
 
-**Terminal 4 - Client 3 (ESP32):**
-```bash
+# Terminal 4 – Client 3
 python main.py --mode client --client_id 3 --device esp32 --compress
 ```
+
+#### Option B — Real hardware over WiFi / hotspot
+
+First, find your laptop's IP on the shared network:
+```bash
+# Windows
+ipconfig
+# Linux / Pi
+hostname -I
+```
+
+**Laptop (FL Server) — Terminal 1:**
+```bash
+python main.py --mode server --server_ip 0.0.0.0 --experiment baseline --num_rounds 50
+```
+
+**Raspberry Pi 4 — run via SSH:**
+```bash
+python main.py --mode client --client_id 1 --device pi4 --compress --server_ip 192.168.1.10
+```
+
+**Raspberry Pi Zero — run via SSH:**
+```bash
+python main.py --mode client --client_id 2 --device pi_zero --compress --server_ip 192.168.1.10
+```
+
+**ESP32 — run via SSH or serial:**
+```bash
+python main.py --mode client --client_id 3 --device esp32 --compress --server_ip 192.168.1.10
+```
+
+> Replace `192.168.1.10` with your laptop's actual IP on the shared network.
 
 ---
 
 ## Hardware Targets
 
-| Device | RAM | Local Epochs |
-|---|---|---|
-| Raspberry Pi 4 | 2GB | 5 |
-| Raspberry Pi Zero | 512MB | 2 |
-| ESP32 | 520KB | 1 |
+| Device | RAM | Local Epochs | Power |
+|---|---|---|---|
+| Raspberry Pi 4 | 2GB | 5 | USB-C 5V |
+| Raspberry Pi Zero | 512MB | 2 | micro-USB 5V |
+| ESP32 | 520KB | 1 | USB 5V |

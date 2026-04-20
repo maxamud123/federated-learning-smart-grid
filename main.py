@@ -33,7 +33,10 @@ from src.evaluation.metrics import evaluate_model, get_memory_usage_mb, save_res
 
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-SERVER_ADDRESS = "127.0.0.1:8080"
+# Default: localhost for single-machine testing.
+# For real hardware, pass --server_ip 192.168.1.10 on each client device.
+SERVER_HOST    = "127.0.0.1"
+SERVER_PORT    = 8080
 DATA_SPLITS    = "data/splits"
 RESULTS_DIR    = "experiments/results"
 NUM_ROUNDS     = 50
@@ -54,26 +57,30 @@ def run_preprocess(raw_data_path, num_clients=NUM_CLIENTS, iid=True):
     print("Preprocessing complete.")
 
 
-def run_server(experiment_name="baseline", num_rounds=NUM_ROUNDS, min_clients=NUM_CLIENTS):
+def run_server(experiment_name="baseline", num_rounds=NUM_ROUNDS, min_clients=NUM_CLIENTS,
+               host=SERVER_HOST, port=SERVER_PORT):
     """Start the FL aggregation server."""
+    server_address = f"{host}:{port}"
     print("\n" + "="*60)
     print(f"FL SERVER STARTING - Experiment: {experiment_name}")
+    print(f"Listening on {server_address}")
     print("="*60)
     start_server(
         num_rounds=num_rounds,
         min_clients=min_clients,
-        server_address=SERVER_ADDRESS,
+        server_address=server_address,
         experiment_name=experiment_name
     )
 
 
-def run_client(client_id, device_type, compress=True):
+def run_client(client_id, device_type, compress=True, server_ip=SERVER_HOST, server_port=SERVER_PORT):
     """Start a single FL client."""
+    server_address = f"{server_ip}:{server_port}"
     print("\n" + "="*60)
     print(f"FL CLIENT {client_id} STARTING - Device: {device_type}")
+    print(f"Connecting to server at {server_address}")
     print("="*60)
 
-    # Load this client's data
     X_train = np.load(os.path.join(DATA_SPLITS, f"client_{client_id}_X.npy"))
     y_train = np.load(os.path.join(DATA_SPLITS, f"client_{client_id}_y.npy"))
     X_test  = np.load(os.path.join(DATA_SPLITS, "test_X.npy"))
@@ -82,7 +89,7 @@ def run_client(client_id, device_type, compress=True):
     compression_k = 0.1 if compress else 1.0
 
     start_client(
-        server_address=SERVER_ADDRESS,
+        server_address=server_address,
         client_id=client_id,
         X_train=X_train,
         y_train=y_train,
@@ -168,6 +175,10 @@ if __name__ == "__main__":
     parser.add_argument("--num_rounds",  type=int, default=NUM_ROUNDS)
     parser.add_argument("--num_clients", type=int, default=NUM_CLIENTS)
     parser.add_argument("--iid",         action="store_true", default=True)
+    parser.add_argument("--server_ip",   type=str, default=SERVER_HOST,
+                        help="Server IP address (e.g. 192.168.1.10 for real hardware)")
+    parser.add_argument("--server_port", type=int, default=SERVER_PORT,
+                        help="Server port (default: 8080)")
 
     args = parser.parse_args()
 
@@ -175,10 +186,12 @@ if __name__ == "__main__":
         run_preprocess(args.data, args.num_clients, args.iid)
 
     elif args.mode == "server":
-        run_server(args.experiment, args.num_rounds, args.num_clients)
+        run_server(args.experiment, args.num_rounds, args.num_clients,
+                   host=args.server_ip, port=args.server_port)
 
     elif args.mode == "client":
-        run_client(args.client_id, args.device, args.compress)
+        run_client(args.client_id, args.device, args.compress,
+                   server_ip=args.server_ip, server_port=args.server_port)
 
     elif args.mode == "test":
         run_local_test()
