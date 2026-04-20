@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+data/raw/
+data/processed/
+data/splits/
+oracleJdk-26/
+*.pkl

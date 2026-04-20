@@ -1,0 +1,8 @@
+{"round": 1, "phase": "fit", "num_clients": 3, "num_failures": 0, "total_bytes": 609804}
+{"round": 1, "phase": "evaluate", "avg_loss": 0.6053709586461385}
+{"round": 2, "phase": "fit", "num_clients": 3, "num_failures": 0, "total_bytes": 609804}
+{"round": 2, "phase": "evaluate", "avg_loss": 0.4470741053422292}
+{"round": 3, "phase": "fit", "num_clients": 3, "num_failures": 0, "total_bytes": 609804}
+{"round": 3, "phase": "evaluate", "avg_loss": 0.3661482632160187}
+{"round": 4, "phase": "fit", "num_clients": 3, "num_failures": 0, "total_bytes": 609804}
+{"round": 4, "phase": "evaluate", "avg_loss": 0.3310893774032593}
