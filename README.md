@@ -1,4 +1,4 @@
-# Federated Learning for Smart Grid Energy Forecasting
+# Optimizing Federated Learning for Resource-Constrained Edge Devices in Smart Grids
 ### A Case Study in Somalia
 
 **Thesis:** Optimizing Federated Learning for Resource-Constrained Edge Devices in Smart Grids
