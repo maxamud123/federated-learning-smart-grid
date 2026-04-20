@@ -112,10 +112,11 @@ class LoggingFedAvg(FedAvg):
         if not results:
             return aggregated
 
-        total_samples = sum(n for n, _ in results)
+        # results is List[Tuple[ClientProxy, EvaluateRes]] — use .num_examples / .metrics
+        total_samples = sum(r.num_examples for _, r in results)
         avg_loss = float(np.mean([r.loss for _, r in results]))
-        rmse     = sum(r.metrics.get("rmse", 0.0) * n for n, r in results) / total_samples
-        mae      = sum(r.metrics.get("mae",  0.0) * n for n, r in results) / total_samples
+        rmse     = sum(r.metrics.get("rmse", 0.0) * r.num_examples for _, r in results) / total_samples
+        mae      = sum(r.metrics.get("mae",  0.0) * r.num_examples for _, r in results) / total_samples
 
         log_round(server_round, {
             "phase":    "evaluate",
