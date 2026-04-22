@@ -25,3 +25,4 @@ env/
 .ruff_cache/
 htmlcov/
 .coverage
+.vscode/
