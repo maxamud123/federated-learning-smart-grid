@@ -2,19 +2,12 @@
 Federated Learning Server - Flower Framework
 Thesis: Optimizing FL for Resource-Constrained Edge Devices in Smart Grids
 Author: Mohamoud Abukar | Supervisor: Dr. KAMUHANDA Danny | ULK 2024-2025
-
-Fixes applied:
-  - Early stopping with configurable patience
-  - RMSE/MAE logged every round (not just avg_loss)
-  - Actual vs compressed bytes logged with savings %
-  - Per-client metrics (device, loss, bytes) logged per round
-  - Round number injected into client config for LR scheduling
 """
 
 import flwr as fl
 from flwr.server.strategy import FedAvg
 from flwr.common import Metrics, FitIns
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple
 import numpy as np
 import json
 import os
@@ -52,11 +45,9 @@ class LoggingFedAvg(FedAvg):
         self.best_round     = 1
 
     def configure_fit(self, server_round, parameters, client_manager):
-        """Inject round number into client config; stop if early stopping triggered."""
         if self.stop_training:
             return []
         instructions = super().configure_fit(server_round, parameters, client_manager)
-        # Pass current round to each client so they can adjust learning rate
         return [
             (client, FitIns(fit_ins.parameters, {**fit_ins.config, "round": server_round}))
             for client, fit_ins in instructions
@@ -72,11 +63,9 @@ class LoggingFedAvg(FedAvg):
         per_client_logs  = []
 
         for _, fit_res in results:
-            # Actual bytes received over the network (full float32 arrays)
             client_actual = sum(len(arr) for arr in fit_res.parameters.tensors)
             actual_bytes += client_actual
 
-            # Theoretical bytes if only non-zero values were transmitted (Top-K savings)
             client_compressed = int(fit_res.metrics.get("compressed_bytes", client_actual))
             compressed_bytes += client_compressed
 
@@ -112,7 +101,6 @@ class LoggingFedAvg(FedAvg):
         if not results:
             return aggregated
 
-        # results is List[Tuple[ClientProxy, EvaluateRes]] — use .num_examples / .metrics
         total_samples = sum(r.num_examples for _, r in results)
         avg_loss = float(np.mean([r.loss for _, r in results]))
         rmse     = sum(r.metrics.get("rmse", 0.0) * r.num_examples for _, r in results) / total_samples
@@ -125,14 +113,12 @@ class LoggingFedAvg(FedAvg):
             "mae":      round(float(mae),  6),
         }, self.log_path)
 
-        # Early stopping: check if loss improved by at least 1e-4
         if avg_loss < self.best_loss - 1e-4:
             self.best_loss      = avg_loss
             self.best_round     = server_round
             self.patience_count = 0
         else:
             self.patience_count += 1
-            remaining = self.patience - self.patience_count
             print(f"  [EarlyStopping] No improvement. Patience: {self.patience_count}/{self.patience} "
                   f"(best loss: {self.best_loss:.6f} @ round {self.best_round})")
             if self.patience_count >= self.patience:

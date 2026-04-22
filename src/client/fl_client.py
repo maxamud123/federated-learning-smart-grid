@@ -2,23 +2,15 @@
 Federated Learning Client - Flower Framework
 Thesis: Optimizing FL for Resource-Constrained Edge Devices in Smart Grids
 Author: Mohamoud Abukar | Supervisor: Dr. KAMUHANDA Danny | ULK 2024-2025
-
-Optimizations applied:
-  1. Adaptive local training  - epochs adjusted by device capability
-  2. Top-K gradient compression - only top 10% of gradients sent to server
-  3. Gradient clipping (max_norm=1.0) - prevents LSTM gradient explosion
-  4. Round-based LR decay - halves every 10 rounds to break loss plateau
-  5. Compressed bytes reporting - server logs actual communication savings
 """
 
 import flwr as fl
 import torch
 import torch.nn as nn
 import numpy as np
-from collections import OrderedDict
 
 from src.models.lstm_model import LSTMModel, get_model_parameters, set_model_parameters
-from src.preprocessing.data_loader import EnergyDataset, get_dataloaders, BATCH_SIZE
+from src.preprocessing.data_loader import get_dataloaders
 
 
 DEVICE_PROFILES = {
@@ -35,11 +27,7 @@ CLIP_NORM  = 1.0     # max gradient norm for clipping
 
 
 def top_k_compression(gradients, k=0.1):
-    """
-    Top-K Gradient Compression (k=0.1 → keep top 10% by magnitude).
-    Zeroes out small gradients; only top-k values are meaningful.
-    Reduces effective communication by the non-zero fraction.
-    """
+    """Keep top-k fraction of gradient values by magnitude; zero out the rest."""
     compressed = []
     for grad in gradients:
         flat      = grad.flatten()
@@ -51,7 +39,6 @@ def top_k_compression(gradients, k=0.1):
 
 
 def count_compressed_bytes(params):
-    """Theoretical bytes if only non-zero values are transmitted (float32 = 4 bytes)."""
     return int(sum(np.count_nonzero(p) for p in params)) * 4
 
 
@@ -80,7 +67,6 @@ class EnergyFLClient(fl.client.NumPyClient):
         )
 
     def _get_lr(self, current_round):
-        """Compute decayed LR: halves every LR_STEP rounds."""
         return BASE_LR * (LR_DECAY ** (current_round // LR_STEP))
 
     def get_parameters(self, config):
@@ -95,7 +81,6 @@ class EnergyFLClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         self.set_parameters(parameters)
 
-        # Round-based LR decay — round is injected by the server's configure_fit
         current_round = int(config.get("round", 1))
         lr = self._get_lr(current_round)
         for pg in self.optimizer.param_groups:
@@ -111,7 +96,6 @@ class EnergyFLClient(fl.client.NumPyClient):
                 output = self.model(X_batch)
                 loss   = self.criterion(output, y_batch)
                 loss.backward()
-                # Gradient clipping: prevents exploding gradients in LSTM
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), CLIP_NORM)
                 self.optimizer.step()
                 epoch_loss += loss.item()

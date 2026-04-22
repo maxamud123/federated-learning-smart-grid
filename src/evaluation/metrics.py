@@ -2,10 +2,6 @@
 Evaluation Utilities - RMSE, MAE, Memory, Communication Metrics
 Thesis: Optimizing FL for Resource-Constrained Edge Devices in Smart Grids
 Author: Mohamoud Abukar | Supervisor: Dr. KAMUHANDA Danny | ULK 2024-2025
-
-Additions:
-  - compare_logs(): automated baseline vs optimized comparison from .jsonl files
-  - MAPE metric preserved for completeness
 """
 
 import numpy as np
@@ -142,12 +138,20 @@ def compare_logs(baseline_log_path, optimized_log_path):
     o_fit,  o_eval  = _parse_log(optimized_log_path)
 
     # ── Summary stats ──────────────────────────────────────────────────────────
-    b_final_loss = b_eval[-1]["avg_loss"]  if b_eval  else float("nan")
-    o_final_loss = o_eval[-1]["avg_loss"]  if o_eval  else float("nan")
-    b_best_loss  = min(e["avg_loss"] for e in b_eval) if b_eval  else float("nan")
-    o_best_loss  = min(e["avg_loss"] for e in o_eval) if o_eval  else float("nan")
-    b_best_round = next(e["round"] for e in b_eval if e["avg_loss"] == b_best_loss)
-    o_best_round = next(e["round"] for e in o_eval if e["avg_loss"] == o_best_loss)
+    b_final_loss = b_eval[-1]["avg_loss"] if b_eval else float("nan")
+    o_final_loss = o_eval[-1]["avg_loss"] if o_eval else float("nan")
+
+    def _best_loss_and_round(eval_rows):
+        if not eval_rows:
+            return float("nan"), "N/A"
+        valid_rows = [e for e in eval_rows if "avg_loss" in e]
+        if not valid_rows:
+            return float("nan"), "N/A"
+        best_row = min(valid_rows, key=lambda e: e["avg_loss"])
+        return best_row["avg_loss"], best_row.get("round", "N/A")
+
+    b_best_loss, b_best_round = _best_loss_and_round(b_eval)
+    o_best_loss, o_best_round = _best_loss_and_round(o_eval)
 
     b_final_rmse = b_eval[-1].get("rmse", float("nan")) if b_eval else float("nan")
     o_final_rmse = o_eval[-1].get("rmse", float("nan")) if o_eval else float("nan")

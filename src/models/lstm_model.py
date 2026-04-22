@@ -31,7 +31,6 @@ class LSTMModel(nn.Module):
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
-        # x: (batch, seq_len, input_size)
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size)
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size)
         out, _ = self.lstm(x, (h0, c0))
@@ -40,23 +39,17 @@ class LSTMModel(nn.Module):
 
 
 def get_model_size_mb(model):
-    """Return model size in MB."""
     total = sum(p.nelement() * p.element_size() for p in model.parameters())
     total += sum(b.nelement() * b.element_size() for b in model.buffers())
     return total / (1024 ** 2)
 
 
 def apply_int8_quantization(model, calibration_loader=None):
-    """
-    Apply post-training static INT8 quantization.
-    Reduces model memory by ~75% (FP32 -> INT8).
-    Returns quantized model (CPU only, suitable for Pi/ESP32).
-    """
+    """Post-training static INT8 quantization. CPU-only (fbgemm backend)."""
     model.eval()
     model.qconfig = torch.quantization.get_default_qconfig('fbgemm')
     torch.quantization.prepare(model, inplace=True)
 
-    # Calibration pass (run a few batches to observe activations)
     if calibration_loader is not None:
         with torch.no_grad():
             for inputs, _ in calibration_loader:
@@ -67,12 +60,10 @@ def apply_int8_quantization(model, calibration_loader=None):
 
 
 def get_model_parameters(model):
-    """Return model parameters as a flat list of numpy arrays (for Flower)."""
     return [p.detach().cpu().numpy() for p in model.parameters()]
 
 
 def set_model_parameters(model, parameters):
-    """Load parameters received from Flower server into the model."""
     params_dict = zip(model.state_dict().keys(), parameters)
     state_dict  = {k: torch.tensor(v) for k, v in params_dict}
     model.load_state_dict(state_dict, strict=True)

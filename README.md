@@ -1,16 +1,19 @@
 # Optimizing Federated Learning for Resource-Constrained Edge Devices in Smart Grids
-### A Case Study in Somalia
+
+## A Case Study in Somalia
 
 **Thesis:** Optimizing Federated Learning for Resource-Constrained Edge Devices in Smart Grids
 **Author:** Mohamoud Abukar | Reg No: 202413001
 **Supervisor:** Dr. KAMUHANDA Danny
 **University:** Kigali Independent University (ULK) | MSc Internet Systems | 2024-2025
 
+<!-- cspell:words Mohamoud Abukar KAMUHANDA numpy lstm LSTM RMSE hotspot -->
+
 ---
 
 ## Project Structure
 
-```
+```text
 federated-learning-smart-grid/
 ├── data/
 │   ├── raw/              ← Place UCI dataset here
@@ -40,11 +43,11 @@ federated-learning-smart-grid/
 
 ## Three Optimizations
 
-| Optimization  | Technique                   | Target Reduction      |
-| ------------- | --------------------------- | --------------------- |
-| Memory        | INT8 Quantization           | ~50% RAM reduction    |
+| Optimization  | Technique                  | Target Reduction      |
+| ------------- | -------------------------- | --------------------- |
+| Memory        | INT8 Quantization          | ~50% RAM reduction    |
 | Communication | Top-K Compression (k=0.1)  | ~60% bandwidth saving |
-| Training Time | Adaptive Local Epochs       | ~40% time reduction   |
+| Training Time | Adaptive Local Epochs      | ~40% time reduction   |
 
 ---
 
@@ -53,7 +56,7 @@ federated-learning-smart-grid/
 All devices connect through **home WiFi or a phone hotspot**. No dedicated router required.
 
 | Device | Role | IP | RAM | Local Epochs |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Laptop | FL Server | 192.168.1.10 | — | — |
 | Raspberry Pi 4 | Client 1 | 192.168.1.11 | 2GB | 5 |
 | Raspberry Pi Zero | Client 2 | 192.168.1.12 | 512MB | 2 |
@@ -61,27 +64,29 @@ All devices connect through **home WiFi or a phone hotspot**. No dedicated route
 
 > See [DEVICE_SETUP.md](DEVICE_SETUP.md) for step-by-step hardware configuration.
 
-
-
 ---
 
 ## How to Run
 
 ### Step 1: Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Step 2: Download UCI dataset
-Download from: https://archive.ics.uci.edu/dataset/235/individual+household+electric+power+consumption
+
+Download from: [UCI Individual Household Electric Power Consumption](https://archive.ics.uci.edu/dataset/235/individual+household+electric+power+consumption)
 Place the file at: `data/raw/household_power_consumption.txt`
 
 ### Step 3: Preprocess data
+
 ```bash
 python main.py --mode preprocess --data data/raw/household_power_consumption.txt
 ```
 
 ### Step 4: Test pipeline locally
+
 ```bash
 python main.py --mode test
 ```
@@ -109,6 +114,7 @@ python main.py --mode client --client_id 3 --device esp32 --compress
 #### Option B — Real hardware over WiFi / hotspot
 
 First, find your laptop's IP on the shared network:
+
 ```bash
 # Windows
 ipconfig
@@ -117,21 +123,25 @@ hostname -I
 ```
 
 **Laptop (FL Server) — Terminal 1:**
+
 ```bash
 python main.py --mode server --server_ip 0.0.0.0 --experiment baseline --num_rounds 50
 ```
 
 **Raspberry Pi 4 — run via SSH:**
+
 ```bash
 python main.py --mode client --client_id 1 --device pi4 --compress --server_ip 192.168.1.10
 ```
 
 **Raspberry Pi Zero — run via SSH:**
+
 ```bash
 python main.py --mode client --client_id 2 --device pi_zero --compress --server_ip 192.168.1.10
 ```
 
 **ESP32 — run via SSH or serial:**
+
 ```bash
 python main.py --mode client --client_id 3 --device esp32 --compress --server_ip 192.168.1.10
 ```
@@ -143,7 +153,7 @@ python main.py --mode client --client_id 3 --device esp32 --compress --server_ip
 ## Hardware Targets
 
 | Device | RAM | Local Epochs | Power |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Raspberry Pi 4 | 2GB | 5 | USB-C 5V |
 | Raspberry Pi Zero | 512MB | 2 | micro-USB 5V |
 | ESP32 | 520KB | 1 | USB 5V |

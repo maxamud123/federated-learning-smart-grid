@@ -31,6 +31,8 @@ Usage:
   # Real hardware over WiFi: add --server_ip 192.168.1.10 to all client commands
 """
 
+# cspell:words Mohamoud Abukar KAMUHANDA cudnn
+
 import argparse
 import random
 import numpy as np

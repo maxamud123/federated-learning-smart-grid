@@ -2,10 +2,6 @@
 Data Preprocessing Pipeline - UCI Household Power Consumption
 Thesis: Optimizing FL for Resource-Constrained Edge Devices in Smart Grids
 Author: Mohamoud Abukar | Supervisor: Dr. KAMUHANDA Danny | ULK 2024-2025
-
-Fixes:
-  - Non-IID split uses Dirichlet-based quantity skew (realistic heterogeneous data)
-  - IID split preserves temporal order after shuffle
 """
 
 import numpy as np
@@ -98,14 +94,10 @@ def split_for_clients(X, y, num_clients=3, iid=True):
             client_data.append((X[start:end], y[start:end]))
             print(f"  Client {i+1}: {end - start} samples (IID)")
     else:
-        # Dirichlet quantity skew: each client gets a non-uniform share
-        # alpha=0.5 produces moderate heterogeneity (lower = more skewed)
-        alpha      = 0.5
+        alpha       = 0.5  # lower = more skewed (moderate heterogeneity)
         proportions = np.random.dirichlet([alpha] * num_clients)
-        proportions = (proportions / proportions.sum())  # normalise
-
-        # Assign indices in time order (preserves temporal structure per client)
-        boundaries = (np.cumsum(proportions) * n).astype(int)
+        proportions = (proportions / proportions.sum())
+        boundaries  = (np.cumsum(proportions) * n).astype(int)
         boundaries[-1] = n  # ensure last client gets remainder
         start = 0
         for i, end in enumerate(boundaries):

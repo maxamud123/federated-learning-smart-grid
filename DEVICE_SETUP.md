@@ -3,11 +3,13 @@
 Step-by-step instructions to configure each hardware device for the FL experiment.
 All devices connect via **home WiFi or phone hotspot** — no dedicated router needed.
 
+<!-- cspell:words hotspot Hotspot Imager venv WROOM netsh advfirewall localport -->
+
 ---
 
 ## Network Overview
 
-```
+```text
 Phone Hotspot / Home WiFi (192.168.1.x)
     ├── Laptop          192.168.1.10   FL Server  :8080
     ├── Raspberry Pi 4  192.168.1.11   Client 1
@@ -22,10 +24,12 @@ Phone Hotspot / Home WiFi (192.168.1.x)
 ## 1. Laptop (FL Server)
 
 ### Requirements
+
 - Python 3.10+
 - All packages from `requirements.txt`
 
 ### Steps
+
 ```bash
 # Install dependencies
 pip install -r requirements.txt
@@ -43,6 +47,7 @@ python main.py --mode server --server_ip 0.0.0.0 --experiment baseline --num_rou
 ## 2. Raspberry Pi 4 (Client 1)
 
 ### Hardware needed
+
 - Raspberry Pi 4 (2GB RAM)
 - MicroSD card (32GB, Class 10)
 - USB-C power supply (5V 3A)
@@ -50,11 +55,13 @@ python main.py --mode server --server_ip 0.0.0.0 --experiment baseline --num_rou
 ### Setup steps
 
 **Flash OS:**
+
 1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
 2. Flash **Raspberry Pi OS Lite (64-bit)** to the MicroSD
 3. In Imager settings, enable SSH and set WiFi credentials before flashing
 
 **First boot:**
+
 ```bash
 # SSH into the Pi (replace with your Pi's IP)
 ssh pi@192.168.1.11
@@ -77,6 +84,7 @@ pip3 install -r requirements.txt
 ```
 
 **Run client:**
+
 ```bash
 python3 main.py --mode client --client_id 1 --device pi4 --compress --server_ip 192.168.1.10
 ```
@@ -85,18 +93,21 @@ python3 main.py --mode client --client_id 1 --device pi4 --compress --server_ip 
 
 ## 3. Raspberry Pi Zero (Client 2)
 
-### Hardware needed
+### Hardware needed (Pi Zero)
+
 - Raspberry Pi Zero W (or Zero 2 W)
 - MicroSD card (32GB)
 - micro-USB power supply (5V 2A)
 
-### Setup steps
+### Setup steps (Pi Zero)
 
 **Flash OS:**
+
 1. Flash **Raspberry Pi OS Lite (32-bit)** — use 32-bit for Pi Zero compatibility
 2. Enable SSH and WiFi in Imager settings
 
 **First boot:**
+
 ```bash
 ssh pi@192.168.1.12
 
@@ -114,6 +125,7 @@ pip3 install -r requirements.txt
 > Pi Zero is slow — `pip install` may take 10–20 minutes. Be patient.
 
 **Run client:**
+
 ```bash
 python3 main.py --mode client --client_id 2 --device pi_zero --compress --server_ip 192.168.1.10
 ```
@@ -122,17 +134,21 @@ python3 main.py --mode client --client_id 2 --device pi_zero --compress --server
 
 ## 4. ESP32 (Client 3)
 
-### Hardware needed
+### Hardware needed (ESP32)
+
 - ESP32-WROOM development board
 - USB cable (for power and serial)
 
 ### Note on ESP32
+
 The ESP32 has only 520KB RAM — it cannot run Python directly. Two options:
 
 **Option A (Recommended for thesis simulation):** Run on laptop as a simulated ESP32:
+
 ```bash
 python main.py --mode client --client_id 3 --device esp32 --compress --server_ip 192.168.1.10
 ```
+
 This uses the ESP32 device profile (1 epoch, minimal memory) on your laptop, accurately simulating the constraints.
 
 **Option B (Real ESP32 with MicroPython):** Flash MicroPython and use a lightweight client script. This requires significant adaptation of the FL client code and is outside the scope of the current implementation.
