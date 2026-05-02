@@ -1,4 +1,5 @@
 # Federated Learning Configuration
+# cspell:words fedavg LSTM
 
 experiment:
   name: "baseline_fedavg"

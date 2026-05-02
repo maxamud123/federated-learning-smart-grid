@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# cspell:words reporthook
 """
 Download and extract UCI Household Power Consumption dataset
 """
