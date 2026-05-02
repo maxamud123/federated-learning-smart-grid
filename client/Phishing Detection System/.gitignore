@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment files — never commit secrets
+.env
+server/.env
+*.env.local
+*.env.production
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor & tools
+.vscode/settings.json
+.idea/
+.claude/
+
+# Vite cache
+.vite/
