@@ -8,9 +8,12 @@ dist/
 *.egg-info/
 *.egg
 
-data/raw/
-data/processed/
-data/splits/
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/splits/*
+!data/splits/.gitkeep
 oracleJdk-26/
 *.pkl
 
@@ -26,3 +29,4 @@ env/
 htmlcov/
 .coverage
 .vscode/
+extensions.txt
