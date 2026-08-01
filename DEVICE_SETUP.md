@@ -11,10 +11,9 @@ All devices connect via **home WiFi or phone hotspot** — no dedicated router n
 
 ```text
 Phone Hotspot / Home WiFi (192.168.1.x)
-    ├── Laptop          192.168.1.10   FL Server  :8080
-    ├── Raspberry Pi 4  192.168.1.11   Client 1
-    ├── Raspberry Pi 0  192.168.1.12   Client 2
-    └── ESP32           192.168.1.13   Client 3
+    ├── Laptop                 192.168.1.10   FL Server + Client 1 (Pi 4 profile, emulated)
+    ├── Raspberry Pi Zero 2 W  192.168.1.12   Client 2 (physical hardware)
+    └── ESP32                  192.168.1.13   Client 3 (physical hardware)
 ```
 
 > Your actual IPs may differ. Find them with `hostname -I` (Linux/Pi) or `ipconfig` (Windows).
@@ -44,66 +43,37 @@ python main.py --mode server --server_ip 0.0.0.0 --experiment baseline --num_rou
 
 ---
 
-## 2. Raspberry Pi 4 (Client 1)
+## 2. Raspberry Pi 4 profile (Client 1 — emulated on laptop)
 
-### Hardware needed
+The Raspberry Pi 4 client is **not run on physical Pi 4 hardware**. It runs on the laptop/host machine using the existing `pi4` device profile (5 epochs, batch 32) to reproduce the Pi 4's resource constraints. Physical hardware validation for this project is performed only on the Raspberry Pi Zero 2 W and the ESP32.
 
-- Raspberry Pi 4 (2GB RAM)
-- MicroSD card (32GB, Class 10)
-- USB-C power supply (5V 3A)
+### Requirements
 
-### Setup steps
+- Same laptop/host machine used for the FL server (Python 3.10+, `requirements.txt` installed)
 
-**Flash OS:**
+### Run client
 
-1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
-2. Flash **Raspberry Pi OS Lite (64-bit)** to the MicroSD
-3. In Imager settings, enable SSH and set WiFi credentials before flashing
-
-**First boot:**
+Open a new terminal on the laptop:
 
 ```bash
-# SSH into the Pi (replace with your Pi's IP)
-ssh pi@192.168.1.11
-
-# Update system
-sudo apt update && sudo apt upgrade -y
-
-# Install Python dependencies
-sudo apt install python3-pip python3-venv git -y
-
-# Clone the project
-git clone https://github.com/maxamud123/federated-learning-smart-grid.git
-cd federated-learning-smart-grid
-
-# Install Python packages
-pip3 install -r requirements.txt
-
-# Copy data splits from laptop (run this on your laptop)
-# scp -r data/splits pi@192.168.1.11:~/federated-learning-smart-grid/data/
-```
-
-**Run client:**
-
-```bash
-python3 main.py --mode client --client_id 1 --device pi4 --compress --server_ip 192.168.1.10
+python main.py --mode client --client_id 1 --device pi4 --compress --server_ip 192.168.1.10
 ```
 
 ---
 
-## 3. Raspberry Pi Zero (Client 2)
+## 3. Raspberry Pi Zero 2 W (Client 2)
 
-### Hardware needed (Pi Zero)
+### Hardware needed (Pi Zero 2 W)
 
-- Raspberry Pi Zero W (or Zero 2 W)
+- Raspberry Pi Zero 2 W
 - MicroSD card (32GB)
 - micro-USB power supply (5V 2A)
 
-### Setup steps (Pi Zero)
+### Setup steps (Pi Zero 2 W)
 
 **Flash OS:**
 
-1. Flash **Raspberry Pi OS Lite (32-bit)** — use 32-bit for Pi Zero compatibility
+1. Flash **Raspberry Pi OS Lite (32-bit)** — use 32-bit for Pi Zero 2 W compatibility
 2. Enable SSH and WiFi in Imager settings
 
 **First boot:**
@@ -122,7 +92,7 @@ pip3 install -r requirements.txt
 # scp -r data/splits pi@192.168.1.12:~/federated-learning-smart-grid/data/
 ```
 
-> Pi Zero is slow — `pip install` may take 10–20 minutes. Be patient.
+> Pi Zero 2 W is slow — `pip install` may take 10–20 minutes. Be patient.
 
 **Run client:**
 

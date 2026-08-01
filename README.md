@@ -33,7 +33,7 @@ federated-learning-smart-grid/
 ├── experiments/
 │   ├── results/          ← JSON result files
 │   └── logs/             ← Per-round training logs
-├── DEVICE_SETUP.md       ← Hardware setup guide (Pi 4, Pi Zero, ESP32)
+├── DEVICE_SETUP.md       ← Hardware setup guide (Pi 4 emulated on laptop, Raspberry Pi Zero 2 W, ESP32)
 ├── main.py               ← Entry point for all modes
 ├── requirements.txt
 └── README.md
@@ -53,13 +53,15 @@ federated-learning-smart-grid/
 
 ## Physical Setup (No Router Needed)
 
+The Raspberry Pi 4 client runs on the laptop/host machine using the `pi4` device profile — it is not run on physical Pi 4 hardware. Physical hardware validation is performed on the Raspberry Pi Zero 2 W and the ESP32.
+
 All devices connect through **home WiFi or a phone hotspot**. No dedicated router required.
 
 | Device | Role | IP | RAM | Local Epochs |
 | --- | --- | --- | --- | --- |
 | Laptop | FL Server | 192.168.1.10 | — | — |
-| Raspberry Pi 4 | Client 1 | 192.168.1.11 | 2GB | 5 |
-| Raspberry Pi Zero | Client 2 | 192.168.1.12 | 512MB | 2 |
+| Raspberry Pi 4 (emulated on laptop) | Client 1 | local (laptop) | 2GB | 5 |
+| Raspberry Pi Zero 2 W | Client 2 | 192.168.1.12 | 512MB | 2 |
 | ESP32 | Client 3 | 192.168.1.13 | 520KB | 1 |
 
 > See [DEVICE_SETUP.md](DEVICE_SETUP.md) for step-by-step hardware configuration.
@@ -111,7 +113,7 @@ python main.py --mode client --client_id 2 --device pi_zero --compress
 python main.py --mode client --client_id 3 --device esp32 --compress
 ```
 
-#### Option B — Real hardware over WiFi / hotspot
+#### Option B — Physical hardware validation over WiFi / hotspot
 
 First, find your laptop's IP on the shared network:
 
@@ -128,19 +130,19 @@ hostname -I
 python main.py --mode server --server_ip 0.0.0.0 --experiment baseline --num_rounds 50
 ```
 
-**Raspberry Pi 4 — run via SSH:**
+**Raspberry Pi 4 (emulated on laptop) — Terminal 2, run locally on the host machine:**
 
 ```bash
 python main.py --mode client --client_id 1 --device pi4 --compress --server_ip 192.168.1.10
 ```
 
-**Raspberry Pi Zero — run via SSH:**
+**Raspberry Pi Zero 2 W — run via SSH (physical hardware validation):**
 
 ```bash
 python main.py --mode client --client_id 2 --device pi_zero --compress --server_ip 192.168.1.10
 ```
 
-**ESP32 — run via SSH or serial:**
+**ESP32 — run via SSH or serial (physical hardware validation):**
 
 ```bash
 python main.py --mode client --client_id 3 --device esp32 --compress --server_ip 192.168.1.10
@@ -154,6 +156,6 @@ python main.py --mode client --client_id 3 --device esp32 --compress --server_ip
 
 | Device | RAM | Local Epochs | Power |
 | --- | --- | --- | --- |
-| Raspberry Pi 4 | 2GB | 5 | USB-C 5V |
-| Raspberry Pi Zero | 512MB | 2 | micro-USB 5V |
+| Raspberry Pi 4 (emulated on laptop) | 2GB | 5 | n/a (runs on laptop) |
+| Raspberry Pi Zero 2 W | 512MB | 2 | micro-USB 5V |
 | ESP32 | 520KB | 1 | USB 5V |
