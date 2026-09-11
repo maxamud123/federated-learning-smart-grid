@@ -1,0 +1,22 @@
+{
+  "experiment": "centralized_baseline",
+  "mode": "centralized",
+  "num_clients_pooled": 3,
+  "train_samples": 27310,
+  "test_samples": 6810,
+  "epochs": 50,
+  "batch_size": 32,
+  "base_lr": 0.001,
+  "lr_decay": 0.5,
+  "lr_step": 10,
+  "clip_norm": 1.0,
+  "seed": 42,
+  "avg_loss": 0.289511,
+  "rmse": 0.538171,
+  "mae": 0.371557,
+  "memory_before_mb": 406.25,
+  "memory_after_mb": 427.93,
+  "metric_space": "normalized (StandardScaler) - matches federated client evaluate()",
+  "rmse_kw": 0.500865,
+  "mae_kw": 0.345801
+}

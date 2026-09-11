@@ -1,15 +1,33 @@
+# Verified working set — installed and exercised end-to-end on 2026-09-10
+# (Windows 11, Python 3.12.10, CPU-only). Every experiment log in
+# experiments/logs/ dated 20260910_* was produced with exactly these versions.
+#
+# Floors below are raised to that verified set rather than left at older
+# untested values: the INT8 path in src/models/lstm_model.py depends on
+# torch.quantization behaviour that has shifted between releases.
+
 # Core ML
-torch>=2.6.0
-torchvision>=0.21.0
-numpy>=1.26.0
-pandas>=2.0.3
-scikit-learn>=1.3.2
+torch>=2.14.0
+numpy>=2.5.3
+pandas>=3.0.5
+scikit-learn>=1.9.1
 
 # Federated Learning
-flwr>=1.6.0
+flwr>=1.36.0
 
 # Utilities
-matplotlib>=3.7.2
-psutil>=5.9.5
-tqdm>=4.66.1
-pyyaml>=6.0.1
+matplotlib>=3.11.1
+psutil>=7.2.2
+
+# Not imported by any module in this repo as of 2026-09-10; retained so that
+# per-device setup instructions stay consistent. Safe to drop if you want a
+# lighter install on the Pi Zero — torchvision in particular is a large wheel.
+torchvision>=0.29.0
+tqdm>=4.70.0
+pyyaml>=6.0.3
+
+# Known deprecation warnings with the above versions (both benign, both will
+# need attention before a future upgrade):
+#   - flwr 1.36: start_server() is deprecated in favour of `flower-superlink`.
+#   - torch 2.14: torch.quantize_per_tensor / quantize_per_channel are
+#     deprecated and slated for removal; apply_int8_quantization() relies on them.

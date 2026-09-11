@@ -43,11 +43,21 @@ federated-learning-smart-grid/
 
 ## Three Optimizations
 
-| Optimization  | Technique                  | Target Reduction      |
-| ------------- | -------------------------- | --------------------- |
-| Memory        | INT8 Quantization          | ~50% RAM reduction    |
-| Communication | Top-K Compression (k=0.1)  | ~60% bandwidth saving |
-| Training Time | Adaptive Local Epochs      | ~40% time reduction   |
+| Optimization  | Technique                 | Flag               | Target                | Measured 2026-09-10              |
+| ------------- | ------------------------- | ------------------ | --------------------- | -------------------------------- |
+| Memory        | INT8 Quantization         | `--quantize`       | ~50% RAM reduction    | **56.9%** model-size reduction † |
+| Communication | Top-K Compression (k=0.1) | `--compress`       | ~60% bandwidth saving | **90.1%** payload saving         |
+| Training Time | Adaptive Local Epochs     | on by default      | ~40% time reduction   | **60.4%** vs fixed epochs ‡      |
+
+† Measured as serialized `state_dict` size (FP32 0.1959 MB -> INT8 0.0844 MB), **not**
+process RAM. Process RSS does not fall: the model is ~0.19 MB against ~400 MB of
+Python interpreter and PyTorch runtime, so the saving is invisible at process level.
+Cite the `model_size_*` log fields, never `memory_*`. See [DEVICE_SETUP.md](DEVICE_SETUP.md).
+
+‡ Critical-path training time over 33 rounds, adaptive (5/2/1 epochs) versus
+`--fixed_epochs 5`. Accuracy did not regress - adaptive reached RMSE 0.5436 against
+fixed 0.6116 at the same round. Wall-clock on a shared laptop is noisy; see the
+same-workload control in that comparison before quoting a single stopwatch figure.
 
 ---
 
@@ -97,20 +107,53 @@ python main.py --mode test
 
 #### Option A — Single machine (simulation, localhost)
 
-Open 4 terminals:
+Open 4 terminals. The clean baseline takes **no optimization flags** - adding any
+of them makes it an optimized run, not a baseline:
 
 ```bash
-# Terminal 1 – Server
+# Terminal 1 - Server
 python main.py --mode server --experiment baseline --num_rounds 50
 
-# Terminal 2 – Client 1
-python main.py --mode client --client_id 1 --device pi4 --compress
+# Terminal 2 - Client 1
+python main.py --mode client --client_id 1 --device pi4
 
-# Terminal 3 – Client 2
+# Terminal 3 - Client 2
+python main.py --mode client --client_id 2 --device pi_zero
+
+# Terminal 4 - Client 3
+python main.py --mode client --client_id 3 --device esp32
+```
+
+To run the **optimized** experiment instead, add `--compress` to every client and
+change the experiment name:
+
+```bash
+python main.py --mode server --experiment optimized --num_rounds 50
+python main.py --mode client --client_id 1 --device pi4     --compress
 python main.py --mode client --client_id 2 --device pi_zero --compress
+python main.py --mode client --client_id 3 --device esp32   --compress
+```
 
-# Terminal 4 – Client 3
-python main.py --mode client --client_id 3 --device esp32 --compress
+#### Optional client flags
+
+Each flag is independent and off by default. Combine them as needed.
+
+| Flag | Effect |
+| --- | --- |
+| `--compress` | Top-K gradient compression (k=0.1). Changes what is transmitted. |
+| `--quantize` | Records INT8 vs FP32 model size each round, measured on a local copy. Measurement only - aggregation stays FP32. See [DEVICE_SETUP.md](DEVICE_SETUP.md). |
+| `--fixed_epochs N` | Forces N local epochs on every client, overriding the adaptive 5/2/1 profile. Used as the H3 control arm. |
+
+```bash
+# INT8 memory-footprint evidence (H1)
+python main.py --mode client --client_id 1 --device pi4     --quantize
+python main.py --mode client --client_id 2 --device pi_zero --quantize
+python main.py --mode client --client_id 3 --device esp32   --quantize
+
+# Fixed-epoch control arm (H3) - every client does 5 epochs
+python main.py --mode client --client_id 1 --device pi4     --fixed_epochs 5
+python main.py --mode client --client_id 2 --device pi_zero --fixed_epochs 5
+python main.py --mode client --client_id 3 --device esp32   --fixed_epochs 5
 ```
 
 #### Option B — Physical hardware validation over WiFi / hotspot

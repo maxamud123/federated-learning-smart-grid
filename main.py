@@ -23,6 +23,20 @@ Usage:
   python main.py --mode client --client_id 2 --device pi_zero --compress
   python main.py --mode client --client_id 3 --device esp32   --compress
 
+  # Step 4b: INT8 memory-footprint measurement (H1)
+  #          Measurement only - aggregation still uses FP32 parameters.
+  python main.py --mode client --client_id 1 --device pi4    --quantize
+  python main.py --mode client --client_id 2 --device pi_zero --quantize
+  python main.py --mode client --client_id 3 --device esp32   --quantize
+
+  # Step 4c: Fixed-epoch control arm (H3) - overrides the adaptive 5/2/1 profile
+  python main.py --mode client --client_id 1 --device pi4    --fixed_epochs 5
+  python main.py --mode client --client_id 2 --device pi_zero --fixed_epochs 5
+  python main.py --mode client --client_id 3 --device esp32   --fixed_epochs 5
+
+  # Step 4d: Centralized (non-federated) reference model for H5
+  python train_centralized.py
+
   # Step 5: Compare results
   python main.py --mode compare \
     --baseline_log experiments/logs/<timestamp>_baseline.jsonl \
@@ -94,8 +108,8 @@ def run_server(experiment_name="baseline", num_rounds=NUM_ROUNDS,
     )
 
 
-def run_client(client_id, device_type, compress=False,
-               server_ip=SERVER_HOST, server_port=SERVER_PORT):
+def run_client(client_id, device_type, compress=False, quantize=False,
+               fixed_epochs=None, server_ip=SERVER_HOST, server_port=SERVER_PORT):
     server_address = f"{server_ip}:{server_port}"
     print("\n" + "="*60)
     print(f"FL CLIENT {client_id} — Device: {device_type}")
@@ -116,6 +130,8 @@ def run_client(client_id, device_type, compress=False,
         y_test=y_test,
         device_type=device_type,
         compression_k=0.1 if compress else 1.0,
+        quantize=quantize,
+        fixed_epochs=fixed_epochs,
     )
 
 
@@ -187,6 +203,12 @@ if __name__ == "__main__":
     parser.add_argument("--experiment",    default="baseline")
     parser.add_argument("--compress",      action="store_true",
                         help="Enable Top-K gradient compression (k=0.1)")
+    parser.add_argument("--quantize",      action="store_true",
+                        help="Measure INT8 memory footprint per round on a local COPY. "
+                             "Aggregation still uses FP32 params - measurement only.")
+    parser.add_argument("--fixed_epochs",  type=int,   default=None,
+                        help="Use N local epochs on EVERY client, overriding the adaptive "
+                             "5/2/1 device profile (H3 control arm).")
     parser.add_argument("--non_iid",       action="store_true",
                         help="Use Non-IID Dirichlet data split instead of IID")
     parser.add_argument("--num_rounds",    type=int,   default=NUM_ROUNDS)
@@ -217,7 +239,8 @@ if __name__ == "__main__":
                    patience=args.patience)
 
     elif args.mode == "client":
-        run_client(args.client_id, args.device, args.compress,
+        run_client(args.client_id, args.device, args.compress, args.quantize,
+                   fixed_epochs=args.fixed_epochs,
                    server_ip=args.server_ip, server_port=args.server_port)
 
     elif args.mode == "test":

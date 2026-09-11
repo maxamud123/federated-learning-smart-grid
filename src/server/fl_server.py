@@ -77,6 +77,13 @@ class LoggingFedAvg(FedAvg):
                 "lr":               round(float(fit_res.metrics.get("lr", 0.001)), 6),
                 "actual_bytes":     client_actual,
                 "compressed_bytes": client_compressed,
+                "train_time_s":     round(float(fit_res.metrics.get("train_time_s", 0.0)), 4),
+                "memory_before_mb": round(float(fit_res.metrics.get("memory_before_mb", 0.0)), 2),
+                "memory_after_mb":  round(float(fit_res.metrics.get("memory_after_mb", 0.0)), 2),
+                "memory_fp32_mb":     round(float(fit_res.metrics.get("memory_fp32_mb", 0.0)), 2),
+                "memory_int8_mb":     round(float(fit_res.metrics.get("memory_int8_mb", 0.0)), 2),
+                "model_size_fp32_mb": round(float(fit_res.metrics.get("model_size_fp32_mb", 0.0)), 6),
+                "model_size_int8_mb": round(float(fit_res.metrics.get("model_size_int8_mb", 0.0)), 6),
             })
 
         savings_pct = (1.0 - compressed_bytes / max(actual_bytes, 1)) * 100

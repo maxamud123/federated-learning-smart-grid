@@ -3,8 +3,6 @@
 Step-by-step instructions to configure each hardware device for the FL experiment.
 All devices connect via **home WiFi or phone hotspot** — no dedicated router needed.
 
-<!-- cspell:words hotspot Hotspot Imager venv WROOM netsh advfirewall localport -->
-
 ---
 
 ## Network Overview
@@ -147,3 +145,46 @@ sudo ufw allow 8080
 - [ ] Data splits copied to each Pi (`data/splits/`)
 - [ ] Dependencies installed on each device
 - [ ] Start server **before** starting clients
+
+---
+
+## INT8 Quantization Measurement (`--quantize`)
+
+```bash
+python main.py --mode client --client_id 1 --device pi4 --quantize
+```
+
+**Methodological limitation — state this explicitly when reporting H1.**
+
+`--quantize` is a *measurement* flag, not an optimization flag. Each round, after
+local training finishes, the client quantizes a **throwaway deep copy** of the
+trained model and records its memory footprint. The copy is discarded
+immediately afterwards.
+
+The parameters sent to the server and used in aggregation remain the **original
+FP32 weights**, unchanged from the non-quantized path. Federated averaging in
+this system operates on FP32 tensors only; mixing INT8 and FP32 parameters in
+`FedAvg` is not supported and is deliberately not attempted here.
+
+So the recorded figures answer "how much smaller *would* the model be on an edge
+device after INT8 quantization?" They do **not** show a federated system that
+trains or aggregates in INT8. That remains future work.
+
+Fields written per client per round:
+
+| Field | Meaning |
+|---|---|
+| `memory_fp32_mb` | Process RSS after training, before quantization |
+| `memory_int8_mb` | Process RSS after quantizing the copy |
+| `model_size_fp32_mb` | Serialized FP32 `state_dict` size |
+| `model_size_int8_mb` | Serialized INT8 `state_dict` size |
+
+**Read `model_size_*`, not `memory_*`, for H1.** Process RSS is dominated by the
+Python interpreter and PyTorch itself (~300–400 MB) while the model is ~0.19 MB,
+so RSS *rises* when the quantized copy is allocated. `get_model_size_mb()` is
+also unusable here: it walks `.parameters()`, which is empty for quantized
+modules (weights move to `_packed_params`), so it reports 0.0 MB and an apparent
+100% reduction. The `model_size_*` fields serialize the `state_dict` instead,
+which counts packed INT8 weights correctly.
+
+Without `--quantize`, none of this runs and all four fields are `0.0`.
