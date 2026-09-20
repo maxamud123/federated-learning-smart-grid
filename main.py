@@ -202,7 +202,8 @@ if __name__ == "__main__":
                         choices=["pi4", "pi_zero", "esp32", "laptop"])
     parser.add_argument("--experiment",    default="baseline")
     parser.add_argument("--compress",      action="store_true",
-                        help="Enable Top-K gradient compression (k=0.1)")
+                        help="Enable Top-K sparsification of the transmitted model "
+                             "weights (k=0.1). Sparsifies weights, not gradients.")
     parser.add_argument("--quantize",      action="store_true",
                         help="Measure INT8 memory footprint per round on a local COPY. "
                              "Aggregation still uses FP32 params - measurement only.")

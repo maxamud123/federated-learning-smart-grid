@@ -1,7 +1,18 @@
 # Device Setup Guide
 
-Step-by-step instructions to configure each hardware device for the FL experiment.
-All devices connect via **home WiFi or phone hotspot** — no dedicated router needed.
+The intended per-device configuration for the FL experiment, and the actual status of each
+device.
+
+**Read this first: every experiment log in this repository was produced with the server and
+all three clients on one host laptop, communicating over localhost. No federated training
+run was executed on physical edge hardware.** The sections below record what each target
+device *is* and where its setup actually stands.
+
+| Client | Device profile | Epochs | Batch | Ran on | Hardware status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `pi4` — Raspberry Pi 4, 2GB | 5 | 32 | Host laptop | Emulated by choice; never purchased |
+| 2 | `pi_zero` — Raspberry Pi Zero W, 512MB, single-core | 2 | 16 | Host laptop | Purchased; no network connection achieved |
+| 3 | `esp32` — ESP32-WROOM, 520KB | 1 | 8 | Host laptop | Emulated of necessity; cannot run this code |
 
 ---
 
@@ -10,9 +21,12 @@ All devices connect via **home WiFi or phone hotspot** — no dedicated router n
 ```text
 Phone Hotspot / Home WiFi (192.168.1.x)
     ├── Laptop                 192.168.1.10   FL Server + Client 1 (Pi 4 profile, emulated)
-    ├── Raspberry Pi Zero 2 W  192.168.1.12   Client 2 (physical hardware)
-    └── ESP32                  192.168.1.13   Client 3 (physical hardware)
+    ├── Raspberry Pi Zero W    192.168.1.12   Client 2 (board in hand; never connected)
+    └── ESP32                  192.168.1.13   Client 3 (profile only; cannot run this code)
 ```
+
+> **The addresses above are illustrative placeholders showing how a multi-device setup
+> would be addressed; every experiment log in this repository ran on localhost.**
 
 > Your actual IPs may differ. Find them with `hostname -I` (Linux/Pi) or `ipconfig` (Windows).
 
@@ -41,9 +55,12 @@ python main.py --mode server --server_ip 0.0.0.0 --experiment baseline --num_rou
 
 ---
 
-## 2. Raspberry Pi 4 profile (Client 1 — emulated on laptop)
+## 2. Raspberry Pi 4 profile (Client 1 — emulated on the host, by choice)
 
-The Raspberry Pi 4 client is **not run on physical Pi 4 hardware**. It runs on the laptop/host machine using the existing `pi4` device profile (5 epochs, batch 32) to reproduce the Pi 4's resource constraints. Physical hardware validation for this project is performed only on the Raspberry Pi Zero 2 W and the ESP32.
+No Raspberry Pi 4 was purchased. Client 1 runs on the laptop/host machine using the `pi4`
+device profile (5 epochs, batch 32). Emulating it there is a stated methodological choice
+in the thesis, not a gap. The profile reproduces the Pi 4's per-round work budget; it does
+not reproduce the Pi 4's wall-clock speed or its 2GB memory ceiling.
 
 ### Requirements
 
@@ -59,19 +76,33 @@ python main.py --mode client --client_id 1 --device pi4 --compress --server_ip 1
 
 ---
 
-## 3. Raspberry Pi Zero 2 W (Client 2)
+## 3. Raspberry Pi Zero W (Client 2)
 
-### Hardware needed (Pi Zero 2 W)
+### Status: board in hand, no run achieved — unresolved
 
-- Raspberry Pi Zero 2 W
+This is the one physical board purchased for the project. It never stayed on a network long
+enough to run a client:
+
+- Connectivity attempts failed across **four separate networks**.
+- The WiFi credentials were verified in the board's boot configuration before each attempt.
+- The board would associate briefly, then drop the connection without recovering.
+
+**No federated training run was attempted on the physical Pi Zero W.** The problem is
+unresolved as of the latest commit, and the client-2 results in `experiments/` are the
+`pi_zero` profile running on the host laptop. The steps below are the intended setup
+procedure; they were not completed past flashing the card.
+
+### Hardware needed (Pi Zero W)
+
+- Raspberry Pi Zero W (single-core, 512MB)
 - MicroSD card (32GB)
 - micro-USB power supply (5V 2A)
 
-### Setup steps (Pi Zero 2 W)
+### Setup steps (Pi Zero W) — intended, not completed
 
 **Flash OS:**
 
-1. Flash **Raspberry Pi OS Lite (32-bit)** — use 32-bit for Pi Zero 2 W compatibility
+1. Flash **Raspberry Pi OS Lite (32-bit)** — the Pi Zero W's ARMv6 CPU requires 32-bit
 2. Enable SSH and WiFi in Imager settings
 
 **First boot:**
@@ -90,7 +121,8 @@ pip3 install -r requirements.txt
 # scp -r data/splits pi@192.168.1.12:~/federated-learning-smart-grid/data/
 ```
 
-> Pi Zero 2 W is slow — `pip install` may take 10–20 minutes. Be patient.
+> Pi Zero W is slow — `pip install` may take 10–20 minutes. Be patient. This step was
+> never reached: the board did not hold a network connection long enough to clone the repo.
 
 **Run client:**
 
@@ -107,19 +139,28 @@ python3 main.py --mode client --client_id 2 --device pi_zero --compress --server
 - ESP32-WROOM development board
 - USB cable (for power and serial)
 
-### Note on ESP32
+### Status: the ESP32 has never run this code, and cannot
 
-The ESP32 has only 520KB RAM — it cannot run Python directly. Two options:
+The ESP32 has 520KB of RAM, which cannot hold the PyTorch tensors or the Flower runtime.
+The federated client code has never executed on the board. The logs show the client-3
+process at roughly **470 MB RSS** (`memory_after_mb` in any `--quantize` run) — about
+**900x the device's entire memory**. This has always been true of the implementation; only
+earlier versions of this documentation overstated it.
 
-**Option A (Recommended for thesis simulation):** Run on laptop as a simulated ESP32:
+**What actually runs, in every logged experiment:** the ESP32 *device profile* — 1 local
+epoch, batch size 8 — on the host laptop.
 
 ```bash
 python main.py --mode client --client_id 3 --device esp32 --compress --server_ip 192.168.1.10
 ```
 
-This uses the ESP32 device profile (1 epoch, minimal memory) on your laptop, accurately simulating the constraints.
+That constrains the per-round work to the profile's epoch and batch budget. It does not
+reproduce the ESP32's 520KB memory ceiling, its CPU or its radio, and it is not evidence
+that the model fits on an ESP32.
 
-**Option B (Real ESP32 with MicroPython):** Flash MicroPython and use a lightweight client script. This requires significant adaptation of the FL client code and is outside the scope of the current implementation.
+**Not attempted — real ESP32 with MicroPython:** flashing MicroPython and writing a
+lightweight on-device client would mean re-implementing training without PyTorch or Flower.
+That is outside the scope of this implementation and was not done.
 
 ---
 
@@ -139,12 +180,34 @@ sudo ufw allow 8080
 
 ## Quick Checklist
 
+> This checklist covers the multi-device deployment described above, which was never
+> carried out. For the runs that produced the logs in `experiments/`, only the last two
+> items apply.
+
 - [ ] All devices connected to the same WiFi / hotspot
 - [ ] Laptop IP noted (e.g. `192.168.1.10`)
 - [ ] Port 8080 open on laptop firewall
 - [ ] Data splits copied to each Pi (`data/splits/`)
 - [ ] Dependencies installed on each device
 - [ ] Start server **before** starting clients
+
+---
+
+## Top-K Weight Sparsification (`--compress`)
+
+```bash
+python main.py --mode client --client_id 1 --device pi4 --compress
+```
+
+**This sparsifies model weights, not gradients.** `--compress` sets `compression_k=0.1`,
+and `get_parameters()` in `src/client/fl_client.py` applies `top_k_compression()` to the
+model's **weight tensors** on the way out: it keeps the largest 10% of each tensor by
+magnitude and zeros the rest. Gradients are never sparsified — they are used in full during
+local training, and the reduction applies only to the parameters transmitted to the server.
+
+Earlier versions of this documentation and of the `--compress` help text called this
+"Top-K gradient compression," which named the wrong quantity. The behaviour of the code has
+not changed.
 
 ---
 
