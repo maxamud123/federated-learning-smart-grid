@@ -34,7 +34,7 @@ CLIP_NORM  = 1.0     # max gradient norm for clipping
 
 
 def top_k_compression(gradients, k=0.1):
-    """Keep top-k fraction of gradient values by magnitude; zero out the rest."""
+    """Keep top-k fraction of weight values by magnitude; zero out the rest."""
     compressed = []
     for grad in gradients:
         flat      = grad.flatten()
